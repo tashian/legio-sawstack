@@ -1,0 +1,8 @@
+build/
+build_host/
+*.bin
+*.elf
+*.map
+*.o
+*.d
+.DS_Store
