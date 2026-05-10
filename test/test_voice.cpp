@@ -30,9 +30,41 @@ void test_naive_saw_wraps() {
     EXPECT_NEAR(v.NaiveSaw(), -1.0f, 1e-3);
 }
 
+// PolyBLEP saw should still ramp like a saw on average.
+void test_polyblep_saw_dc_offset_low() {
+    Voice v;
+    v.Init(kSampleRate);
+    v.SetFrequency(1000.0f);
+
+    // Average a full period; expect near zero (saw is symmetric around zero).
+    double sum = 0.0;
+    int n = 480;  // 10 periods
+    for (int i = 0; i < n; ++i) sum += v.Saw();
+    EXPECT_NEAR(sum / n, 0.0, 0.01);
+}
+
+// At low frequency, polyBLEP correction is negligible — output ≈ naive saw.
+void test_polyblep_matches_naive_at_low_freq() {
+    Voice naive, blep;
+    naive.Init(kSampleRate);
+    blep.Init(kSampleRate);
+    naive.SetFrequency(50.0f);
+    blep.SetFrequency(50.0f);
+
+    // Sample halfway through the cycle, far from the discontinuity.
+    for (int i = 0; i < 480; ++i) {  // jump to mid-period (50 Hz / 48k = 480 samp / period)
+        naive.NaiveSaw();
+        blep.Saw();
+    }
+    // Now phases are aligned at ~0.5; correction is zero there.
+    EXPECT_NEAR(naive.NaiveSaw(), blep.Saw(), 0.01);
+}
+
 void run_all() {
     RUN_TEST(test_naive_saw_ramps);
     RUN_TEST(test_naive_saw_wraps);
+    RUN_TEST(test_polyblep_saw_dc_offset_low);
+    RUN_TEST(test_polyblep_matches_naive_at_low_freq);
 }
 
 TEST_MAIN()

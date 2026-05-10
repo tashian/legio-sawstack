@@ -8,6 +8,7 @@ class Voice {
     void  Init(float sample_rate);
     void  SetFrequency(float hz);  // Updates per-sample phase increment.
     float NaiveSaw();              // Advances phase, returns phase*2-1 in [-1, 1).
+    float Saw();   // PolyBLEP-corrected saw, anti-aliased.
 
   private:
     float sample_rate_ = 48000.0f;
