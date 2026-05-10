@@ -21,8 +21,7 @@ class Voice {
     float sample_rate_ = 48000.0f;
     float phase_       = 0.0f;     // [0, 1)
     float phase_inc_   = 0.0f;     // freq / sample_rate
-    float slave_phase_      = 0.0f;  // [0, 1) — advances at master_freq * ratio in RICH
-    bool  slave_just_reset_ = false; // suppress polyBLEP on first sample after hard-sync
+    float slave_phase_ = 0.0f;     // [0, 1) — advances at master_freq * ratio in RICH
 };
 
 }  // namespace sawstack

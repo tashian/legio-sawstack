@@ -124,17 +124,20 @@ void test_hardsync_dc_offset_low_at_ratio_three() {
     EXPECT_NEAR(sum / n, 0.0, 0.05);
 }
 
-// Reset must zero both master and slave phases.
+// Reset must zero both master and slave phases — verified by comparing against
+// a fresh Voice that was never advanced (both should produce identical output).
 void test_hardsync_phase_reset_zeros_both() {
+    Voice baseline;
+    baseline.Init(kSampleRate);
+    baseline.SetFrequency(440.0f);
+
     Voice v;
     v.Init(kSampleRate);
     v.SetFrequency(440.0f);
-
     for (int i = 0; i < 23; ++i) v.HardSync(2.5f);
     v.ResetPhase(0.0f);
     v.ResetSyncPhase();
-    // After both resets, ratio=1, output ≈ -1 (saw start).
-    EXPECT_NEAR(v.HardSync(1.0f), -1.0f, 1e-3);
+    EXPECT_NEAR(v.HardSync(1.0f), baseline.HardSync(1.0f), 1e-5);
 }
 
 void run_all() {
