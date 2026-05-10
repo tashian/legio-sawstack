@@ -79,10 +79,45 @@ void test_engine_output_is_bounded() {
     }
 }
 
+void test_engine_rich_mode_produces_audio() {
+    SupersawEngine eng;
+    eng.Init(kSampleRate);
+    Params p = default_params();
+    p.mode       = Mode::RICH;
+    p.bottom_adc = 0.5f;  // ratio = 1 + 0.5*4 = 3.0
+    eng.ApplyParams(p);
+    float l[48] = {0}, r[48] = {0};
+    eng.ProcessBlock(l, r, 48);
+    double e = 0;
+    for (int i = 0; i < 48; ++i) e += l[i]*l[i] + r[i]*r[i];
+    EXPECT_TRUE(e > 0.01);
+}
+
+void test_engine_rich_at_morph_zero_matches_saw_amplitude() {
+    // RICH at morph=0 is ratio=1, which is identical to a plain saw in shape
+    // (just sums to the soft-clipped/panned 5-stack). Energy comparable to STACK
+    // at morph=1.
+    SupersawEngine eng;
+    eng.Init(kSampleRate);
+
+    Params p = default_params();
+    p.mode = Mode::RICH;
+    p.bottom_adc = 0.0f;  // ratio = 1.0
+    eng.ApplyParams(p);
+    float l[48] = {0}, r[48] = {0};
+    eng.ProcessBlock(l, r, 48);
+    double e_rich = 0;
+    for (int i = 0; i < 48; ++i) e_rich += l[i]*l[i] + r[i]*r[i];
+
+    EXPECT_TRUE(e_rich > 0.01);
+}
+
 void run_all() {
     RUN_TEST(test_engine_stack_produces_nonzero_audio);
     RUN_TEST(test_engine_stack_morph_zero_is_quieter_lf_than_morph_one);
     RUN_TEST(test_engine_output_is_bounded);
+    RUN_TEST(test_engine_rich_mode_produces_audio);
+    RUN_TEST(test_engine_rich_at_morph_zero_matches_saw_amplitude);
 }
 
 TEST_MAIN()

@@ -42,9 +42,21 @@ void SupersawEngine::ApplyParams(const Params& p) {
 void SupersawEngine::ProcessBlock(float* out_l, float* out_r, int n_frames) {
     for (int n = 0; n < n_frames; ++n) {
         float voice_samples[5];
-        for (int v = 0; v < 5; ++v) {
-            // STACK only for now; RICH/SUB added in later tasks.
-            voice_samples[v] = voices_[v].Morph(morph_norm_);
+        switch (current_mode_) {
+            case Mode::STACK:
+                for (int v = 0; v < 5; ++v)
+                    voice_samples[v] = voices_[v].Morph(morph_norm_);
+                break;
+            case Mode::RICH: {
+                float ratio = 1.0f + morph_norm_ * 4.0f;
+                for (int v = 0; v < 5; ++v)
+                    voice_samples[v] = voices_[v].HardSync(ratio);
+                break;
+            }
+            case Mode::SUB:
+                // Implemented in Task 11.
+                for (int v = 0; v < 5; ++v) voice_samples[v] = 0.0f;
+                break;
         }
         float l, r;
         MixVoices(voice_samples, current_width_, &l, &r);
