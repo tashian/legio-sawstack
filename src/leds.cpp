@@ -7,6 +7,7 @@ namespace {
 constexpr uint32_t kBootDurationMs   = 500;
 constexpr uint32_t kBootBlinkMs      = 125;   // 4 Hz total period 250 ms; on for 125 ms
 constexpr uint32_t kGatePulseMs      = 50;
+constexpr uint32_t kOctavePulseMs    = 80;     // brief LEDs-on-bright flash on octave cross
 constexpr float    kGatePulseGain    = 1.4f;  // brightness multiplier during pulse
 
 constexpr Rgb kBlue       = { 0.0f, 0.0f, 0.8f };
@@ -57,6 +58,14 @@ void ComputeLeds(const LedInputs& in, Rgb* out_left, Rgb* out_right) {
         if (l.r > 1.0f) l.r = 1.0f;
         if (l.g > 1.0f) l.g = 1.0f;
         if (l.b > 1.0f) l.b = 1.0f;
+    }
+
+    // Octave-crossing flash: both LEDs briefly bright white. Overrides mode/width.
+    uint32_t since_oct = in.now_ms - in.last_octave_crossing_ms;
+    if (in.last_octave_crossing_ms != 0 && since_oct < kOctavePulseMs) {
+        constexpr Rgb kFlash = { 0.9f, 0.9f, 0.9f };
+        l = kFlash;
+        r = kFlash;
     }
 
     *out_left  = l;

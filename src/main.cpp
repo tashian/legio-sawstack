@@ -22,10 +22,14 @@ struct UiSnapshot {
     float top_adc;
     float bottom_adc;
     float voct_adc;
+    float pitch_hz;
+    int   coarse_semitones;
+    int   fine_cents;
     int   gate_edge_count;
 };
 volatile UiSnapshot g_ui = {};
 static volatile uint32_t s_last_gate_edge_ms = 0;
+static volatile uint32_t s_last_octave_crossing_ms = 0;
 
 // Convert libDaisy Switch3.Read() (0=CENTER, 1=POS_UP, 2=POS_DOWN) to a
 // panel-corrected code (1 = panel UP, 2 = panel DOWN, 0 = CENTER).
@@ -98,12 +102,21 @@ static void AudioCallback(AudioHandle::InterleavingInputBuffer  in,
 
     // Update UI snapshot.
     UiSnapshot& g = const_cast<UiSnapshot&>(g_ui);
-    g.mode       = p.mode;
-    g.width      = p.width;
-    g.top_adc    = p.top_adc;
-    g.bottom_adc = p.bottom_adc;
-    g.voct_adc   = p.voct_adc;
+    int prev_coarse = g.coarse_semitones;
+    g.mode             = p.mode;
+    g.width            = p.width;
+    g.top_adc          = p.top_adc;
+    g.bottom_adc       = p.bottom_adc;
+    g.voct_adc         = p.voct_adc;
+    g.pitch_hz         = engine.GetMasterHz();
+    g.coarse_semitones = engine.GetCoarseSemitones();
+    g.fine_cents       = engine.GetFineCents();
     if (p.gate_edge) ++g.gate_edge_count;
+
+    // Octave-crossing detection: coarse changed AND new coarse is a multiple of 12.
+    if (g.coarse_semitones != prev_coarse && g.coarse_semitones % 12 == 0) {
+        s_last_octave_crossing_ms = System::GetNow();
+    }
 }
 
 static const char* mode_label(Mode m) {
@@ -136,6 +149,7 @@ int main(void) {
         li.width             = g_ui.width;
         li.now_ms            = now;
         li.last_gate_edge_ms = s_last_gate_edge_ms;
+        li.last_octave_crossing_ms = s_last_octave_crossing_ms;
         li.boot_ms           = now - boot_start;
 
         sawstack::Rgb left, right;
@@ -146,8 +160,9 @@ int main(void) {
 
         if (now - last_print >= 200) {
             UiSnapshot snap = const_cast<const UiSnapshot&>(g_ui);
-            hw.seed.PrintLine("mode=%s width=%s top=%0.3f bot=%0.3f voct_raw=%0.4f sync=%d",
+            hw.seed.PrintLine("mode=%s width=%s pitch=%0.2fHz coarse=%d fine=%d top=%0.3f bot=%0.3f voct_raw=%0.4f sync=%d",
                               mode_label(snap.mode), width_label(snap.width),
+                              snap.pitch_hz, snap.coarse_semitones, snap.fine_cents,
                               snap.top_adc, snap.bottom_adc, snap.voct_adc,
                               snap.gate_edge_count);
             last_print = now;

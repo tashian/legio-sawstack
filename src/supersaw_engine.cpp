@@ -36,14 +36,15 @@ void SupersawEngine::ApplyParams(const Params& p) {
 
     coarse_semitones_ += p.encoder_coarse_delta;
     fine_cents_       += p.encoder_fine_delta;
-    if (coarse_semitones_ < -24) coarse_semitones_ = -24;
-    if (coarse_semitones_ >  24) coarse_semitones_ =  24;
+    if (coarse_semitones_ < -48) coarse_semitones_ = -48;
+    if (coarse_semitones_ >  48) coarse_semitones_ =  48;
     if (fine_cents_       < -50) fine_cents_       = -50;
     if (fine_cents_       >  50) fine_cents_       =  50;
 
     voct_smooth_ += kAlpha * (VoctVoltsFromAdc(p.voct_adc, kVoctZero, kVoctScale) - voct_smooth_);
 
-    float master_hz = ComputeMasterHz(coarse_semitones_, fine_cents_, voct_smooth_);
+    master_hz_ = ComputeMasterHz(coarse_semitones_, fine_cents_, voct_smooth_);
+    const float master_hz = master_hz_;
     float freqs[5];
     ComputeVoiceFreqs(master_hz, detune_smooth_, freqs);
     for (int i = 0; i < 5; ++i) voices_[i].SetFrequency(freqs[i]);

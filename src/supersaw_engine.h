@@ -15,6 +15,11 @@ class SupersawEngine {
     // Generate `n_frames` of stereo audio into `out_l`, `out_r` (both size >= n_frames).
     void ProcessBlock(float* out_l, float* out_r, int n_frames);
 
+    // Read-only accessors for telemetry / LED logic.
+    float GetMasterHz()        const { return master_hz_; }
+    int   GetCoarseSemitones() const { return coarse_semitones_; }
+    int   GetFineCents()       const { return fine_cents_; }
+
   private:
     float sample_rate_     = 48000.0f;
     Mode  current_mode_    = Mode::STACK;
@@ -32,6 +37,8 @@ class SupersawEngine {
     int   crossfade_remaining_ = 0;        // samples remaining in the 5 ms cosine fade
     int   crossfade_total_     = 0;        // total samples for current crossfade
     bool  gate_pending_        = false;
+    float master_hz_       = 261.63f;  // updated by ApplyParams; readable for telemetry/LED
+
     // One-pole smoothers for ADCs.
     float detune_smooth_       = 0.0f;
     float morph_smooth_        = 0.0f;

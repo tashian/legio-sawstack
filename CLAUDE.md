@@ -51,3 +51,7 @@ Hardcoded `kVoctZero` / `kVoctScale` in `src/pitch.h`. Procedure:
 - Don't add new test frameworks; `test/test_assert.h` is intentionally minimal.
 - Don't claim work is done because host tests pass — the in-rack feel test is the real gate.
 - Don't call `PrintLine` from inside the audio callback.
+
+## Coarse pitch range
+
+Encoder press+turn gives ±48 semitones (8 octaves total) of coarse pitch range, centered on C4. The right LED flashes bright white briefly each time you cross an octave boundary so you can navigate by feel.
