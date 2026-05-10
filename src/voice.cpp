@@ -1,5 +1,6 @@
 // src/voice.cpp
 #include "voice.h"
+#include <cmath>
 
 namespace {
 // PolyBLEP correction: returns a small adjustment to apply near phase
@@ -41,6 +42,26 @@ float Voice::Saw() {
     phase_ += phase_inc_;
     if (phase_ >= 1.0f) phase_ -= 1.0f;
     return out;
+}
+
+float Voice::Sine() {
+    float out = std::sin(phase_ * 2.0f * 3.14159265358979f);
+    phase_ += phase_inc_;
+    if (phase_ >= 1.0f) phase_ -= 1.0f;
+    return out;
+}
+
+float Voice::Morph(float timbre) {
+    // Compute both shapes from the *same* phase before advancing.
+    float s = std::sin(phase_ * 2.0f * 3.14159265358979f);
+    float saw = phase_ * 2.0f - 1.0f - poly_blep(phase_, phase_inc_);
+    phase_ += phase_inc_;
+    if (phase_ >= 1.0f) phase_ -= 1.0f;
+    return (1.0f - timbre) * s + timbre * saw;
+}
+
+void Voice::ResetPhase(float new_phase) {
+    phase_ = new_phase;
 }
 
 }  // namespace sawstack
