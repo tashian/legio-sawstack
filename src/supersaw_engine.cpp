@@ -54,12 +54,17 @@ void SupersawEngine::ProcessBlock(float* out_l, float* out_r, int n_frames) {
                 break;
             }
             case Mode::SUB:
-                // Implemented in Task 11.
-                for (int v = 0; v < 5; ++v) voice_samples[v] = 0.0f;
+                for (int v = 0; v < 5; ++v)
+                    voice_samples[v] = voices_[v].Morph(1.0f) * 0.2f;
                 break;
         }
         float l, r;
         MixVoices(voice_samples, current_width_, &l, &r);
+        if (current_mode_ == Mode::SUB) {
+            float sub = sub_voice_.Saw() * morph_norm_;
+            l += sub;
+            r += sub;
+        }
         out_l[n] = soft_clip(l);
         out_r[n] = soft_clip(r);
     }
