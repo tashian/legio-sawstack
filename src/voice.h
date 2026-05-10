@@ -11,8 +11,8 @@ class Voice {
 
   private:
     float sample_rate_ = 48000.0f;
-    double phase_      = 0.0;      // [0, 1) - double precision to reduce accumulation error
-    double phase_inc_  = 0.0;      // freq / sample_rate
+    float phase_       = 0.0f;     // [0, 1)
+    float phase_inc_   = 0.0f;     // freq / sample_rate
 };
 
 }  // namespace sawstack

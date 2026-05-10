@@ -1,6 +1,5 @@
 // src/voice.cpp
 #include "voice.h"
-#include <cmath>
 
 namespace sawstack {
 
@@ -15,10 +14,9 @@ void Voice::SetFrequency(float hz) {
 }
 
 float Voice::NaiveSaw() {
-    double normalized_phase = std::fmod(phase_, 1.0);
-    if (normalized_phase < 0.0) normalized_phase += 1.0;
-    float out = (float)(normalized_phase * 2.0 - 1.0);
+    float out = phase_ * 2.0f - 1.0f;
     phase_ += phase_inc_;
+    if (phase_ >= 1.0f) phase_ -= 1.0f;
     return out;
 }
 

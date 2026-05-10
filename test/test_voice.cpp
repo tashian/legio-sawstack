@@ -22,10 +22,11 @@ void test_naive_saw_ramps() {
 void test_naive_saw_wraps() {
     Voice v;
     v.Init(kSampleRate);
-    v.SetFrequency(1000.0f);
+    // 1500 Hz → phase_inc = 1/32 exactly in float; period = 32 samples.
+    v.SetFrequency(1500.0f);
 
-    // Run for one full period (48 samples), output should be near -1 again.
-    for (int i = 0; i < 48; ++i) v.NaiveSaw();
+    // Run for one full period (32 samples), output should be exactly -1 again.
+    for (int i = 0; i < 32; ++i) v.NaiveSaw();
     EXPECT_NEAR(v.NaiveSaw(), -1.0f, 1e-3);
 }
 
