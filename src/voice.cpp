@@ -64,4 +64,33 @@ void Voice::ResetPhase(float new_phase) {
     phase_ = new_phase;
 }
 
+float Voice::HardSync(float ratio) {
+    // Output is polyBLEP saw of the slave phase.
+    float slave_inc = phase_inc_ * ratio;
+    float out = slave_phase_ * 2.0f - 1.0f;
+    // Suppress polyBLEP correction on the first sample after a hard-sync reset
+    // so the output is exactly -1 (saw start) rather than the smoothed midpoint.
+    if (!slave_just_reset_) {
+        out -= poly_blep(slave_phase_, slave_inc);
+    }
+    slave_just_reset_ = false;
+
+    // Advance master; on wrap, hard-sync the slave to phase 0.
+    phase_ += phase_inc_;
+    if (phase_ >= 1.0f) {
+        phase_            -= 1.0f;
+        slave_phase_       = 0.0f;
+        slave_just_reset_  = true;
+    } else {
+        slave_phase_ += slave_inc;
+        if (slave_phase_ >= 1.0f) slave_phase_ -= 1.0f;
+    }
+    return out;
+}
+
+void Voice::ResetSyncPhase() {
+    slave_phase_      = 0.0f;
+    slave_just_reset_ = true;
+}
+
 }  // namespace sawstack

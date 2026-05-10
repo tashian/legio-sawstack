@@ -97,6 +97,46 @@ void test_phase_reset_zeros_phase() {
     EXPECT_NEAR(v.NaiveSaw(), -0.2f, 1e-5);
 }
 
+// At richness=1 (ratio=1) the slave phase tracks the master exactly,
+// so output should match a plain saw of the same frequency.
+void test_hardsync_at_ratio_one_matches_saw() {
+    Voice plain, sync;
+    plain.Init(kSampleRate);
+    sync.Init(kSampleRate);
+    plain.SetFrequency(440.0f);
+    sync.SetFrequency(440.0f);
+
+    for (int i = 0; i < 100; ++i) {
+        EXPECT_NEAR(plain.Saw(), sync.HardSync(1.0f), 1e-4);
+    }
+}
+
+// At ratio>1, the slave wraps multiple times per master period.
+// Sum over one master period should be ~0 (still saw-symmetric).
+void test_hardsync_dc_offset_low_at_ratio_three() {
+    Voice v;
+    v.Init(kSampleRate);
+    v.SetFrequency(440.0f);
+
+    double sum = 0.0;
+    int n = static_cast<int>(kSampleRate / 440.0f) * 4;  // ~4 master periods
+    for (int i = 0; i < n; ++i) sum += v.HardSync(3.0f);
+    EXPECT_NEAR(sum / n, 0.0, 0.05);
+}
+
+// Reset must zero both master and slave phases.
+void test_hardsync_phase_reset_zeros_both() {
+    Voice v;
+    v.Init(kSampleRate);
+    v.SetFrequency(440.0f);
+
+    for (int i = 0; i < 23; ++i) v.HardSync(2.5f);
+    v.ResetPhase(0.0f);
+    v.ResetSyncPhase();
+    // After both resets, ratio=1, output ≈ -1 (saw start).
+    EXPECT_NEAR(v.HardSync(1.0f), -1.0f, 1e-3);
+}
+
 void run_all() {
     RUN_TEST(test_naive_saw_ramps);
     RUN_TEST(test_naive_saw_wraps);
@@ -105,6 +145,9 @@ void run_all() {
     RUN_TEST(test_sine_at_quarter_period_is_one);
     RUN_TEST(test_morph_at_zero_is_sine_at_one_is_saw);
     RUN_TEST(test_phase_reset_zeros_phase);
+    RUN_TEST(test_hardsync_at_ratio_one_matches_saw);
+    RUN_TEST(test_hardsync_dc_offset_low_at_ratio_three);
+    RUN_TEST(test_hardsync_phase_reset_zeros_both);
 }
 
 TEST_MAIN()
