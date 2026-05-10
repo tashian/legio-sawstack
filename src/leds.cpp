@@ -6,9 +6,8 @@ namespace sawstack {
 namespace {
 constexpr uint32_t kBootDurationMs   = 500;
 constexpr uint32_t kBootBlinkMs      = 125;   // 4 Hz total period 250 ms; on for 125 ms
-constexpr uint32_t kGatePulseMs      = 50;
 constexpr uint32_t kOctavePulseMs    = 80;     // brief LEDs-on-bright flash on octave cross
-constexpr float    kGatePulseGain    = 1.4f;  // brightness multiplier during pulse
+constexpr float    kGateHighGain     = 1.6f;  // brightness multiplier while gate is HIGH
 
 constexpr Rgb kBlue       = { 0.0f, 0.0f, 0.8f };
 constexpr Rgb kYellow     = { 0.7f, 0.6f, 0.0f };
@@ -51,10 +50,9 @@ void ComputeLeds(const LedInputs& in, Rgb* out_left, Rgb* out_right) {
     Rgb l = mode_color(in.mode);
     Rgb r = width_color(in.width);
 
-    // Gate-edge pulse on left LED.
-    uint32_t since_gate = in.now_ms - in.last_gate_edge_ms;
-    if (in.last_gate_edge_ms != 0 && since_gate < kGatePulseMs) {
-        l = scale(l, kGatePulseGain);
+    // Live gate-level mirror on left LED: full brightness while gate HIGH.
+    if (in.gate_high) {
+        l = scale(l, kGateHighGain);
         if (l.r > 1.0f) l.r = 1.0f;
         if (l.g > 1.0f) l.g = 1.0f;
         if (l.b > 1.0f) l.b = 1.0f;

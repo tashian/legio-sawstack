@@ -28,7 +28,7 @@ struct UiSnapshot {
     int   gate_edge_count;
 };
 volatile UiSnapshot g_ui = {};
-static volatile uint32_t s_last_gate_edge_ms = 0;
+static volatile bool s_gate_high = false;
 static volatile uint32_t s_last_octave_crossing_ms = 0;
 
 // Convert libDaisy Switch3.Read() (0=CENTER, 1=POS_UP, 2=POS_DOWN) to a
@@ -86,7 +86,7 @@ static void AudioCallback(AudioHandle::InterleavingInputBuffer  in,
 
     // Gate edge detection — block-rate via libDaisy's GateIn::Trig().
     p.gate_edge = hw.gate.Trig();
-    if (p.gate_edge) s_last_gate_edge_ms = System::GetNow();
+    s_gate_high = hw.gate.State();
 
     engine.ApplyParams(p);
 
@@ -148,7 +148,7 @@ int main(void) {
         li.mode              = g_ui.mode;
         li.width             = g_ui.width;
         li.now_ms            = now;
-        li.last_gate_edge_ms = s_last_gate_edge_ms;
+        li.gate_high = s_gate_high;
         li.last_octave_crossing_ms = s_last_octave_crossing_ms;
         li.boot_ms           = now - boot_start;
 
