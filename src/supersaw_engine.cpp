@@ -40,6 +40,8 @@ void SupersawEngine::ApplyParams(const Params& p) {
 }
 
 void SupersawEngine::ProcessBlock(float* out_l, float* out_r, int n_frames) {
+    constexpr float kVoiceMixGain = 0.25f;  // headroom so 5-voice sum doesn't crush sub
+
     for (int n = 0; n < n_frames; ++n) {
         float voice_samples[5];
         switch (current_mode_) {
@@ -55,11 +57,13 @@ void SupersawEngine::ProcessBlock(float* out_l, float* out_r, int n_frames) {
             }
             case Mode::SUB:
                 for (int v = 0; v < 5; ++v)
-                    voice_samples[v] = voices_[v].Morph(1.0f) * 0.2f;
+                    voice_samples[v] = voices_[v].Morph(1.0f);
                 break;
         }
         float l, r;
         MixVoices(voice_samples, current_width_, &l, &r);
+        l *= kVoiceMixGain;
+        r *= kVoiceMixGain;
         if (current_mode_ == Mode::SUB) {
             float sub = sub_voice_.Saw() * morph_norm_;
             l += sub;
