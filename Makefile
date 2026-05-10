@@ -2,7 +2,8 @@
 TARGET = sawstack
 
 # Sources — extended as new modules are added.
-CPP_SOURCES = src/main.cpp src/supersaw_engine.cpp src/voice.cpp src/pitch.cpp src/stereo_vca.cpp
+CPP_SOURCES = src/main.cpp src/supersaw_engine.cpp src/voice.cpp src/pitch.cpp \
+              src/stereo_vca.cpp src/leds.cpp
 
 # Pull in float-printf so PrintLine("%f") emits floats (newlib-nano strips it).
 LDFLAGS += -u _printf_float

@@ -19,7 +19,7 @@ all: $(addprefix $(OUT)/, $(TESTS))
 $(OUT):
 	mkdir -p $(OUT)
 
-$(OUT)/test_smoke: test_smoke.cpp | $(OUT)
+$(OUT)/test_smoke: test_smoke.cpp ../src/leds.cpp | $(OUT)
 	$(CXX) $(CXXFLAGS) $^ -o $@
 
 $(OUT)/test_voice: test_voice.cpp ../src/voice.cpp | $(OUT)

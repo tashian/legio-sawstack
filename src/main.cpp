@@ -3,6 +3,7 @@
 #include "supersaw_engine.h"
 #include "params.h"
 #include "dsp_common.h"
+#include "leds.h"
 #include <cstdio>
 
 using namespace daisy;
@@ -24,6 +25,7 @@ struct UiSnapshot {
     int   gate_edge_count;
 };
 volatile UiSnapshot g_ui = {};
+static volatile uint32_t s_last_gate_edge_ms = 0;
 
 // Convert libDaisy Switch3.Read() (0=CENTER, 1=POS_UP, 2=POS_DOWN) to a
 // panel-corrected code (1 = panel UP, 2 = panel DOWN, 0 = CENTER).
@@ -80,6 +82,7 @@ static void AudioCallback(AudioHandle::InterleavingInputBuffer  in,
 
     // Gate edge detection — block-rate via libDaisy's GateIn::Trig().
     p.gate_edge = hw.gate.Trig();
+    if (p.gate_edge) s_last_gate_edge_ms = System::GetNow();
 
     engine.ApplyParams(p);
 
@@ -125,15 +128,30 @@ int main(void) {
     hw.seed.StartLog(false);
 
     uint32_t last_print = System::GetNow();
+    uint32_t boot_start = System::GetNow();
     while (true) {
-        if (System::GetNow() - last_print >= 200) {  // 5 Hz
-            UiSnapshot snap = const_cast<const UiSnapshot&>(g_ui);  // copy out of volatile
+        uint32_t now = System::GetNow();
+        sawstack::LedInputs li;
+        li.mode              = g_ui.mode;
+        li.width             = g_ui.width;
+        li.now_ms            = now;
+        li.last_gate_edge_ms = s_last_gate_edge_ms;
+        li.boot_ms           = now - boot_start;
+
+        sawstack::Rgb left, right;
+        sawstack::ComputeLeds(li, &left, &right);
+        hw.SetLed(DaisyLegio::LED_LEFT,  left.r,  left.g,  left.b);
+        hw.SetLed(DaisyLegio::LED_RIGHT, right.r, right.g, right.b);
+        hw.UpdateLeds();
+
+        if (now - last_print >= 200) {
+            UiSnapshot snap = const_cast<const UiSnapshot&>(g_ui);
             hw.seed.PrintLine("mode=%s width=%s top=%0.3f bot=%0.3f voct_raw=%0.4f sync=%d",
                               mode_label(snap.mode), width_label(snap.width),
                               snap.top_adc, snap.bottom_adc, snap.voct_adc,
                               snap.gate_edge_count);
-            last_print = System::GetNow();
+            last_print = now;
         }
-        System::Delay(5);
+        System::Delay(20);  // ~50 Hz LED refresh
     }
 }
