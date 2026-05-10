@@ -5,15 +5,15 @@ namespace sawstack {
 
 // V/oct calibration. Measure once on real hardware, edit, rebuild, reflash.
 // kVoctScale = 0 disables the v/oct path entirely (jack ignored).
-constexpr float kVoctZero  = 0.0f;   // ADC reading at 0V (placeholder; Task 16 measures)
-constexpr float kVoctScale = 0.0f;   // 1.0 / (adc_at_+1V - adc_at_0V) (placeholder)
+constexpr float kVoctZero  = 0.3019f;   // ADC reading at 0V (measured 2026-05-10 on the author's Patch SM)
+constexpr float kVoctScale = 7.6805f;   // 1.0 / (0.4321 - 0.3019); verified linear at -2V (0.0412 measured vs 0.0415 predicted, ~1 LSB)
 
 // Convert raw v/oct ADC reading to volts using calibration constants.
 // Returns 0.0 if scale == 0.0 (calibration not done).
 float VoctVoltsFromAdc(float voct_adc, float zero, float scale);
 
 // Compute the master pitch in Hz.
-//   coarse_semitones: encoder coarse offset in semitones, [-24, +24]
+//   coarse_semitones: encoder coarse offset in semitones, [-48, +48]
 //   fine_cents:       encoder fine offset in cents,      [-50, +50]
 //   voct_volts:       v/oct CV in volts (already converted)
 float ComputeMasterHz(int coarse_semitones, int fine_cents, float voct_volts);
