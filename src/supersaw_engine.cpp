@@ -31,8 +31,8 @@ void SupersawEngine::ApplyParams(const Params& p) {
     // Smoothing — one-pole IIR with ~5 ms time constant at audio rate.
     // Applied per-block; that's good enough to mask ADC jitter.
     constexpr float kAlpha = 0.2f;  // tau ≈ 5 ms at 48-sample blocks @ 48 kHz
-    detune_smooth_ += kAlpha * (std::clamp(p.top_adc,    0.0f, 1.0f) - detune_smooth_);
-    morph_smooth_  += kAlpha * (std::clamp(p.bottom_adc, 0.0f, 1.0f) - morph_smooth_);
+    detune_smooth_ += kAlpha * (std::max(0.0f, std::min(1.0f, p.top_adc))    - detune_smooth_);
+    morph_smooth_  += kAlpha * (std::max(0.0f, std::min(1.0f, p.bottom_adc)) - morph_smooth_);
 
     coarse_semitones_ += p.encoder_coarse_delta;
     fine_cents_       += p.encoder_fine_delta;
