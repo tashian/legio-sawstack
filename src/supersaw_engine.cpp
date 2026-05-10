@@ -88,7 +88,7 @@ void SupersawEngine::ProcessBlock(float* out_l, float* out_r, int n_frames) {
         l *= kVoiceMixGain;
         r *= kVoiceMixGain;
         if (current_mode_ == Mode::SUB) {
-            float sub = sub_voice_.Saw() * morph_norm_;
+            float sub = sub_voice_.Saw() * morph_norm_ * kVoiceMixGain;
             l += sub;
             r += sub;
         }

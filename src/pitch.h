@@ -5,7 +5,7 @@ namespace sawstack {
 
 // V/oct calibration. Measure once on real hardware, edit, rebuild, reflash.
 // kVoctScale = 0 disables the v/oct path entirely (jack ignored).
-constexpr float kVoctZero  = 0.0f;   // ADC reading at 0V (placeholder; Task 17 measures)
+constexpr float kVoctZero  = 0.0f;   // ADC reading at 0V (placeholder; Task 16 measures)
 constexpr float kVoctScale = 0.0f;   // 1.0 / (adc_at_+1V - adc_at_0V) (placeholder)
 
 // Convert raw v/oct ADC reading to volts using calibration constants.
