@@ -8,7 +8,7 @@ CXXFLAGS  = -std=c++17 -O2 -Wall -Wextra -Wno-unused-parameter \
 OUT       = ../build_host
 
 # Default test list — extended as new modules are added.
-TESTS = test_smoke test_voice test_pitch test_stereo_vca
+TESTS = test_smoke test_voice test_pitch test_stereo_vca test_engine
 
 all: $(addprefix $(OUT)/, $(TESTS))
 	@for t in $(TESTS); do \
@@ -29,6 +29,10 @@ $(OUT)/test_pitch: test_pitch.cpp ../src/pitch.cpp | $(OUT)
 	$(CXX) $(CXXFLAGS) $^ -o $@
 
 $(OUT)/test_stereo_vca: test_stereo_vca.cpp ../src/stereo_vca.cpp | $(OUT)
+	$(CXX) $(CXXFLAGS) $^ -o $@
+
+$(OUT)/test_engine: test_engine.cpp ../src/supersaw_engine.cpp ../src/voice.cpp \
+                    ../src/pitch.cpp ../src/stereo_vca.cpp | $(OUT)
 	$(CXX) $(CXXFLAGS) $^ -o $@
 
 clean:
