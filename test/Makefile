@@ -8,7 +8,7 @@ CXXFLAGS  = -std=c++17 -O2 -Wall -Wextra -Wno-unused-parameter \
 OUT       = ../build_host
 
 # Default test list — extended as new modules are added.
-TESTS = test_smoke
+TESTS = test_smoke test_voice
 
 all: $(addprefix $(OUT)/, $(TESTS))
 	@for t in $(TESTS); do \
@@ -20,6 +20,9 @@ $(OUT):
 	mkdir -p $(OUT)
 
 $(OUT)/test_smoke: test_smoke.cpp | $(OUT)
+	$(CXX) $(CXXFLAGS) $^ -o $@
+
+$(OUT)/test_voice: test_voice.cpp ../src/voice.cpp | $(OUT)
 	$(CXX) $(CXXFLAGS) $^ -o $@
 
 clean:
