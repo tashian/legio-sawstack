@@ -23,7 +23,6 @@ void test_soft_clip_passes_unity() {
 void test_leds_boot_pattern_alternates() {
     LedInputs in;
     in.mode = sawstack::Mode::STACK; in.width = sawstack::Width::STEREO;
-    in.gate_high = false;
     in.last_octave_crossing_ms = 0;
     in.boot_ms = 0;          in.now_ms = 0;
     Rgb a_l, a_r; ComputeLeds(in, &a_l, &a_r);
@@ -37,7 +36,6 @@ void test_leds_boot_pattern_alternates() {
 void test_leds_wide_brighter_than_stereo() {
     LedInputs in;
     in.mode = sawstack::Mode::STACK;
-    in.gate_high = false;
     in.last_octave_crossing_ms = 0;
     in.boot_ms = 600;        in.now_ms = 600;
     in.width = sawstack::Width::STEREO;

@@ -7,7 +7,6 @@ namespace {
 constexpr uint32_t kBootDurationMs   = 500;
 constexpr uint32_t kBootBlinkMs      = 125;   // 4 Hz total period 250 ms; on for 125 ms
 constexpr uint32_t kOctavePulseMs    = 80;     // brief LEDs-on-bright flash on octave cross
-constexpr float    kGateHighGain     = 1.6f;  // brightness multiplier while gate is HIGH
 
 constexpr Rgb kBlue       = { 0.0f, 0.0f, 0.8f };
 constexpr Rgb kYellow     = { 0.7f, 0.6f, 0.0f };
@@ -15,8 +14,6 @@ constexpr Rgb kDimWhite   = { 0.25f, 0.25f, 0.25f };
 constexpr Rgb kBarelyOn   = { 0.05f, 0.05f, 0.05f };
 constexpr Rgb kStereoBlue = { 0.0f, 0.0f, 0.40f };
 constexpr Rgb kWideBlue   = { 0.0f, 0.0f, 0.90f };
-
-inline Rgb scale(Rgb c, float k) { return { c.r * k, c.g * k, c.b * k }; }
 
 inline Rgb mode_color(Mode m) {
     switch (m) {
@@ -49,14 +46,6 @@ void ComputeLeds(const LedInputs& in, Rgb* out_left, Rgb* out_right) {
     // Normal mode display.
     Rgb l = mode_color(in.mode);
     Rgb r = width_color(in.width);
-
-    // Live gate-level mirror on left LED: full brightness while gate HIGH.
-    if (in.gate_high) {
-        l = scale(l, kGateHighGain);
-        if (l.r > 1.0f) l.r = 1.0f;
-        if (l.g > 1.0f) l.g = 1.0f;
-        if (l.b > 1.0f) l.b = 1.0f;
-    }
 
     // Octave-crossing flash: both LEDs briefly bright white. Overrides mode/width.
     uint32_t since_oct = in.now_ms - in.last_octave_crossing_ms;
