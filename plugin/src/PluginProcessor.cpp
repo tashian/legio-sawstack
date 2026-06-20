@@ -24,7 +24,6 @@ SawstackAudioProcessor::createLayout() {
     params.push_back(std::make_unique<P>("decay",   "Decay",   R{0.001f, 10.0f, 0.0f, 0.3f}, 0.2f));
     params.push_back(std::make_unique<P>("sustain", "Sustain", R{0.0f, 1.0f}, 0.8f));
     params.push_back(std::make_unique<P>("release", "Release", R{0.001f, 10.0f, 0.0f, 0.3f}, 0.3f));
-    params.push_back(std::make_unique<P>("level", "Level", R{-60.0f, 6.0f}, 0.0f));
 
     return { params.begin(), params.end() };
 }
@@ -100,9 +99,6 @@ void SawstackAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     engine_.ProcessBlock(l, r, n);
 
     adsr_.applyEnvelopeToBuffer(buffer, 0, n);
-
-    const float gainDb = apvts.getRawParameterValue("level")->load();
-    buffer.applyGain(juce::Decibels::decibelsToGain(gainDb));
 }
 
 juce::AudioProcessorEditor* SawstackAudioProcessor::createEditor() {
