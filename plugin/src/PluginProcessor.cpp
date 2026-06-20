@@ -77,11 +77,13 @@ void SawstackAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     // Pitch: hold last frequency if no note is active so release tails stay in tune.
     const int   coarse = static_cast<int>(apvts.getRawParameterValue("coarse")->load());
     const float fine   = apvts.getRawParameterValue("fine")->load();
-    float hz = 261.63f;
-    if (active >= 0)
+    float hz;
+    if (active >= 0) {
         hz = sawstack::NoteToHz(active, pitchBendSemis_, coarse, fine);
-    else if (lastActiveNote_ >= 0)
-        hz = sawstack::NoteToHz(lastActiveNote_, pitchBendSemis_, coarse, fine);
+        heldHz_ = hz;          // remember it for the release tail
+    } else {
+        hz = heldHz_;          // hold last note's pitch while the envelope rings out
+    }
 
     sawstack::Params p{};
     p.top_adc    = apvts.getRawParameterValue("detune")->load();

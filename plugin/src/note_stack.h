@@ -7,6 +7,7 @@ namespace sawstack {
 // Monophonic last-note-priority note tracker. JUCE-independent and host-tested.
 class NoteStack {
   public:
+    NoteStack() { stack_.reserve(128); }  // pre-allocate; no heap alloc during processBlock
     void NoteOn(int note);    // push; becomes active (re-press moves to active)
     void NoteOff(int note);   // remove anywhere; active = most-recent remaining
     bool HasNote() const { return !stack_.empty(); }

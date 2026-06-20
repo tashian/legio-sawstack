@@ -41,5 +41,6 @@ class SawstackAudioProcessor : public juce::AudioProcessor {
     juce::ADSR::Parameters adsrParams_;
     float pitchBendSemis_ = 0.0f;   // current bend in semitones (±2)
     int   lastActiveNote_ = -1;     // for retrigger detection
+    float heldHz_         = 261.63f; // last played frequency, held through the release tail
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SawstackAudioProcessor)
 };
