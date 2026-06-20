@@ -28,8 +28,11 @@ class SawstackAudioProcessor : public juce::AudioProcessor {
     const juce::String getProgramName(int) override { return {}; }
     void changeProgramName(int, const juce::String&) override {}
 
-    void getStateInformation(juce::MemoryBlock&) override {}
-    void setStateInformation(const void*, int) override {}
+    void getStateInformation(juce::MemoryBlock& dest) override;
+    void setStateInformation(const void* data, int size) override;
+
+    juce::AudioProcessorValueTreeState apvts;
+    static juce::AudioProcessorValueTreeState::ParameterLayout createLayout();
 
   private:
     sawstack::SupersawEngine engine_;
