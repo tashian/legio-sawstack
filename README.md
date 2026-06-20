@@ -13,4 +13,15 @@
 
 Stereo audio out. No internal envelope; this is a pure oscillator.
 
-Build: `make` (firmware), `make -C test` (host tests), `make program-dfu` (flash). See CLAUDE.md for full details.
+Firmware build: `make -C firmware`, `make -C firmware/test` (host tests), `make -C firmware program-dfu` (flash). See CLAUDE.md for full details.
+
+## Plugin
+
+A macOS AU / VST3 / Standalone instrument built with JUCE, reusing the firmware DSP core from `firmware/src`. See [`plugin/README.md`](plugin/README.md) for full details.
+
+    brew install cmake ninja          # one-time
+    git submodule update --init plugin/JUCE
+    cmake -B plugin/build -G Ninja -DCMAKE_BUILD_TYPE=Release plugin
+    cmake --build plugin/build
+
+Artefacts land in `plugin/build/Sawstack_artefacts/Release/` and AU/VST3 are auto-installed to `~/Library/Audio/Plug-Ins/`. Validate with `auval -v aumu Saws Tash`.

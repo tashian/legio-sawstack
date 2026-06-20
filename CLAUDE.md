@@ -5,17 +5,29 @@ Custom firmware for the Noise Engineering Legio module (Daisy Patch SM, STM32H75
 Spec: `../docs/superpowers/specs/2026-05-09-sawstack-supersaw-design.md`
 Plan: `../docs/superpowers/plans/2026-05-10-sawstack-supersaw-firmware.md`
 
+## Repo layout
+
+This repo now holds two front-ends around one shared DSP core:
+
+- `firmware/` — the Legio module firmware (Daisy Patch SM). Build/flash/test as before, but paths are now under `firmware/` (e.g. `make -C firmware/test`, `make -C firmware program-dfu`).
+- `plugin/` — a macOS AU/VST3/Standalone instrument (JUCE) reusing `firmware/src` DSP. See `plugin/README.md`.
+
+The DSP core (`voice`, `pitch`, `stereo_vca`, `supersaw_engine`, `soft_clip`)
+lives in `firmware/src` and is consumed unmodified by both, except for
+`Params.external_hz` which lets the plugin set absolute MIDI pitch (firmware
+leaves it 0 and is unaffected).
+
 ## Build / test / flash
 
 ```sh
-make -C lib/libDaisy   # one-time after submodule init
-make -C lib/DaisySP    # one-time
-make                   # firmware → build/sawstack.bin
-make -C test           # host DSP tests (no hardware)
-make program-dfu       # flash (BOOT + RESET on the Patch SM submodule first)
+make -C firmware/lib/libDaisy   # one-time after submodule init
+make -C firmware/lib/DaisySP    # one-time
+make -C firmware                # firmware → firmware/build/sawstack.bin
+make -C firmware/test           # host DSP tests (no hardware)
+make -C firmware program-dfu    # flash (BOOT + RESET on the Patch SM submodule first)
 ```
 
-DFU entry on Legio: BOOT + RESET on the Patch SM submodule (back of the module). Be patient at flash gates — the user may not be able to hit the buttons cleanly without disturbing patch cables. After `make program-dfu`, dfu-util's `Error during download get_status` / `Error 74` is harmless. The module sometimes won't re-enumerate without a manual reseat.
+DFU entry on Legio: BOOT + RESET on the Patch SM submodule (back of the module). Be patient at flash gates — the user may not be able to hit the buttons cleanly without disturbing patch cables. After `make -C firmware program-dfu`, dfu-util's `Error during download get_status` / `Error 74` is harmless. The module sometimes won't re-enumerate without a manual reseat.
 
 Live serial: `screen /dev/cu.usbmodem* 115200`. If `screen` is already attached on another terminal it holds the device exclusively and `cat` will fail — check `screen -ls`.
 
@@ -36,12 +48,12 @@ DSP modules (`voice`, `pitch`, `stereo_vca`, `supersaw_engine`, `leds`) **never*
 
 ## V/oct calibration
 
-Hardcoded `kVoctZero` / `kVoctScale` in `src/pitch.h`. Procedure:
+Hardcoded `kVoctZero` / `kVoctScale` in `firmware/src/pitch.h`. Procedure:
 
 1. Open serial telemetry: `screen /dev/cu.usbmodem* 115200`. Telemetry always prints `voct_raw=<f>`.
 2. Patch a known 0 V source to the v/oct jack. Note the printed `voct_raw` → that's `kVoctZero`.
 3. Patch a known +1 V source. Note the printed `voct_raw_at_1V`. Compute `kVoctScale = 1.0 / (voct_raw_at_1V - kVoctZero)`.
-4. Edit `src/pitch.h`, rebuild, reflash.
+4. Edit `firmware/src/pitch.h`, rebuild, reflash.
 
 `kVoctScale = 0` disables the v/oct path entirely (jack ignored). Default state at first flash.
 
