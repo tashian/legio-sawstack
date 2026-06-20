@@ -6,3 +6,4 @@ build_host/
 *.o
 *.d
 .DS_Store
+plugin/build/
