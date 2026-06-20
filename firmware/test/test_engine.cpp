@@ -3,6 +3,7 @@
 #include "../src/supersaw_engine.h"
 #include "../src/params.h"
 #include "../src/dsp_common.h"
+#include "../src/pitch.h"
 #include <cmath>
 
 using sawstack::SupersawEngine;
@@ -198,6 +199,24 @@ void test_engine_mode_change_does_not_click() {
     EXPECT_TRUE(boundary_jump < 0.5f);
 }
 
+static void test_external_hz_overrides_pitch() {
+    sawstack::SupersawEngine eng;
+    eng.Init(48000.0f);
+
+    sawstack::Params p{};
+    p.voct_adc   = sawstack::kVoctZero;  // → 0 V, neutral
+    p.width      = sawstack::Width::STEREO;
+    p.mode       = sawstack::Mode::STACK;
+    p.external_hz = 440.0f;
+    eng.ApplyParams(p);
+    EXPECT_NEAR(eng.GetMasterHz(), 440.0f, 0.01f);
+
+    // external_hz <= 0 falls back to the encoder/voct path (C4 at zero offsets).
+    p.external_hz = 0.0f;
+    eng.ApplyParams(p);
+    EXPECT_NEAR(eng.GetMasterHz(), 261.63f, 0.5f);
+}
+
 void run_all() {
     RUN_TEST(test_engine_stack_produces_nonzero_audio);
     RUN_TEST(test_engine_stack_morph_zero_is_quieter_lf_than_morph_one);
@@ -208,6 +227,7 @@ void run_all() {
     RUN_TEST(test_engine_sub_mode_at_one_has_more_energy_than_zero);
     RUN_TEST(test_engine_gate_edge_resets_voice_phases);
     RUN_TEST(test_engine_mode_change_does_not_click);
+    RUN_TEST(test_external_hz_overrides_pitch);
 }
 
 TEST_MAIN()

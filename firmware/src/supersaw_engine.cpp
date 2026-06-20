@@ -43,7 +43,9 @@ void SupersawEngine::ApplyParams(const Params& p) {
 
     voct_smooth_ += kAlpha * (VoctVoltsFromAdc(p.voct_adc, kVoctZero, kVoctScale) - voct_smooth_);
 
-    master_hz_ = ComputeMasterHz(coarse_semitones_, fine_cents_, voct_smooth_);
+    master_hz_ = (p.external_hz > 0.0f)
+                     ? p.external_hz
+                     : ComputeMasterHz(coarse_semitones_, fine_cents_, voct_smooth_);
     const float master_hz = master_hz_;
     float freqs[5];
     ComputeVoiceFreqs(master_hz, detune_smooth_, freqs);

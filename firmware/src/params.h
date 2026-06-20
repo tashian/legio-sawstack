@@ -21,6 +21,10 @@ struct Params {
     int   encoder_coarse_delta;  // detents (press + turn)
 
     bool  gate_edge;     // true on rising edge this block
+
+    // Plugin-only: absolute master pitch in Hz. <= 0 ignores this and uses the
+    // encoder/voct path above. Firmware never sets it (defaults to 0).
+    float external_hz = 0.0f;
 };
 
 }  // namespace sawstack
