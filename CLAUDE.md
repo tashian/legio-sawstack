@@ -42,7 +42,7 @@ Live serial: `screen /dev/cu.usbmodem* 115200`. If `screen` is already attached 
 
 ## DSP / HAL split
 
-DSP modules (`voice`, `pitch`, `stereo_vca`, `supersaw_engine`, `leds`) **never** include `daisy_legio.h`, `daisy_seed.h`, or anything from libDaisy outside `DaisySP/Source/...`. They take and return `float` and read a plain `Params` struct. This is what makes `make -C test` work with plain `g++` and what catches algorithm bugs in seconds rather than in a flash cycle.
+DSP modules (`voice`, `pitch`, `stereo_vca`, `supersaw_engine`, `leds`) **never** include `daisy_legio.h`, `daisy_seed.h`, or anything from libDaisy outside `DaisySP/Source/...`. They take and return `float` and read a plain `Params` struct. This is what makes `make -C firmware/test` work with plain `g++` and what catches algorithm bugs in seconds rather than in a flash cycle.
 
 `main.cpp` is the only file that touches the HAL. It reads controls into a `Params` struct, calls `engine.apply_params(p)`, and runs `engine.process_block(out_l, out_r, n)` from the audio callback.
 
@@ -60,7 +60,7 @@ Hardcoded `kVoctZero` / `kVoctScale` in `firmware/src/pitch.h`. Procedure:
 ## Things to avoid
 
 - Don't add a second board class or rewrite the HAL. `DaisyLegio` is complete.
-- Don't add new test frameworks; `test/test_assert.h` is intentionally minimal.
+- Don't add new test frameworks; `firmware/test/test_assert.h` is intentionally minimal.
 - Don't claim work is done because host tests pass — the in-rack feel test is the real gate.
 - Don't call `PrintLine` from inside the audio callback.
 
