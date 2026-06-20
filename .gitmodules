@@ -5,3 +5,6 @@
 	path = firmware/lib/DaisySP
 	url = https://github.com/electro-smith/DaisySP.git
 
+[submodule "plugin/JUCE"]
+	path = plugin/JUCE
+	url = https://github.com/juce-framework/JUCE.git
