@@ -24,8 +24,6 @@ SawstackAudioProcessor::createLayout() {
     params.push_back(std::make_unique<P>("decay",   "Decay",   R{0.001f, 10.0f, 0.0f, 0.3f}, 0.2f));
     params.push_back(std::make_unique<P>("sustain", "Sustain", R{0.0f, 1.0f}, 0.8f));
     params.push_back(std::make_unique<P>("release", "Release", R{0.001f, 10.0f, 0.0f, 0.3f}, 0.3f));
-    params.push_back(std::make_unique<juce::AudioParameterInt>("coarse", "Coarse", -24, 24, 0));
-    params.push_back(std::make_unique<P>("fine", "Fine", R{-100.0f, 100.0f}, 0.0f));
     params.push_back(std::make_unique<P>("level", "Level", R{-60.0f, 6.0f}, 0.0f));
 
     return { params.begin(), params.end() };
@@ -75,11 +73,11 @@ void SawstackAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     adsr_.setParameters(adsrParams_);
 
     // Pitch: hold last frequency if no note is active so release tails stay in tune.
-    const int   coarse = static_cast<int>(apvts.getRawParameterValue("coarse")->load());
-    const float fine   = apvts.getRawParameterValue("fine")->load();
+    // Pitch comes from MIDI (+ pitch bend); no per-instance tune offsets — transpose
+    // in the host if needed. NoteToHz keeps its coarse/fine args (passed 0 here).
     float hz;
     if (active >= 0) {
-        hz = sawstack::NoteToHz(active, pitchBendSemis_, coarse, fine);
+        hz = sawstack::NoteToHz(active, pitchBendSemis_, 0, 0.0f);
         heldHz_ = hz;          // remember it for the release tail
     } else {
         hz = heldHz_;          // hold last note's pitch while the envelope rings out
