@@ -199,6 +199,35 @@ void test_engine_mode_change_does_not_click() {
     EXPECT_TRUE(boundary_jump < 0.5f);
 }
 
+void test_engine_gate_retrigger_does_not_click() {
+    // A gate edge resets all voice phases. If that reset isn't click-suppressed,
+    // the waveform steps discontinuously — which the plugin hears as a click when
+    // a new note retriggers while the amp envelope still has gain (legato / release
+    // tail). Like a mode change, the retrigger must stay continuous at the boundary.
+    SupersawEngine eng;
+    eng.Init(kSampleRate);
+    Params p = default_params();
+    p.top_adc = 0.0f;  // unison: voices stay phase-coherent → largest reset jump (worst case)
+    eng.ApplyParams(p);
+
+    float l[48] = {0}, r[48] = {0};
+    // Run several blocks so the voice phases are mid-cycle (non-zero) at reset time.
+    for (int i = 0; i < 20; ++i) eng.ProcessBlock(l, r, 48);
+    float last_l = l[47], last_r = r[47];
+
+    p.gate_edge = true;
+    eng.ApplyParams(p);
+    float lg[48] = {0}, rg[48] = {0};
+    eng.ProcessBlock(lg, rg, 48);
+
+    // Same continuity bound the mode-change crossfade is held to.
+    float jump_l = std::fabs(lg[0] - last_l);
+    float jump_r = std::fabs(rg[0] - last_r);
+    std::printf("  gate boundary jump: L=%g R=%g\n", jump_l, jump_r);
+    EXPECT_TRUE(jump_l < 0.5f);
+    EXPECT_TRUE(jump_r < 0.5f);
+}
+
 static void test_external_hz_overrides_pitch() {
     sawstack::SupersawEngine eng;
     eng.Init(48000.0f);
@@ -226,6 +255,7 @@ void run_all() {
     RUN_TEST(test_engine_sub_mode_at_zero_sub_matches_stack_full_saw);
     RUN_TEST(test_engine_sub_mode_at_one_has_more_energy_than_zero);
     RUN_TEST(test_engine_gate_edge_resets_voice_phases);
+    RUN_TEST(test_engine_gate_retrigger_does_not_click);
     RUN_TEST(test_engine_mode_change_does_not_click);
     RUN_TEST(test_external_hz_overrides_pitch);
 }

@@ -79,6 +79,14 @@ void SupersawEngine::ProcessBlock(float* out_l, float* out_r, int n_frames) {
         }
         sub_voice_.ResetPhase(0.0f);
         gate_pending_ = false;
+
+        // Click-suppress the phase-reset discontinuity with the same 5 ms cosine
+        // crossfade used for mode changes: blend from the pre-reset output toward
+        // the new waveform instead of stepping to it. Without this, a retrigger
+        // that lands while the amp envelope still has gain (legato / release tail
+        // in the plugin) produces an audible step = a click on the transient.
+        crossfade_total_     = static_cast<int>(sample_rate_ * 0.005f);
+        crossfade_remaining_ = crossfade_total_;
     }
 
     for (int n = 0; n < n_frames; ++n) {
