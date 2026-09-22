@@ -1,4 +1,4 @@
-# CLAUDE.md — sawstack
+# AGENTS.md — sawstack
 
 A 5-voice **supersaw** for the Noise Engineering Legio module (Daisy Patch SM, STM32H750): 5 detuned saws (or sine↔saw morph / hard-sync / +sub-octave depending on left-switch mode) summed to a stereo VCA. This repo ships **two front-ends around one shared DSP core**:
 
@@ -35,7 +35,7 @@ make -C firmware/test           # host DSP tests (no hardware)
 make -C firmware program-dfu    # flash (BOOT + RESET on the Patch SM submodule first)
 ```
 
-DFU entry, `Error 74`, and `screen` port contention: see `../CLAUDE.md`.
+DFU entry, `Error 74`, and `screen` port contention: see `../AGENTS.md`.
 
 ## Plugin: build / test / validate
 
@@ -67,7 +67,7 @@ The engine API is `Init(float sample_rate)`, `ApplyParams(const Params&)`, `Proc
 ## Hardware quirks (firmware)
 
 The shared Legio lessons (3 ADC channels, inverted Switch3 polarity, `-u _printf_float`, DFU
-re-enumeration, no `PrintLine` in the audio callback) are in `../CLAUDE.md`. Specific to this app:
+re-enumeration, no `PrintLine` in the audio callback) are in `../AGENTS.md`. Specific to this app:
 
 - `Params` uses *panel-relative* switch labels; the Switch3 inversion happens once in `main.cpp`.
 - `kVoctScale = 0` until calibration is complete makes the v/oct path a no-op, so the firmware is musically usable from first flash.
