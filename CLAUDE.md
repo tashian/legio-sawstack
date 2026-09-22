@@ -1,23 +1,31 @@
 # CLAUDE.md — sawstack
 
-Custom firmware for the Noise Engineering Legio module (Daisy Patch SM, STM32H750). 5-voice supersaw oscillator: 5 detuned saws (or sine↔saw morph / hard-sync / +sub-octave depending on left-switch mode) summed to a stereo VCA.
+A 5-voice **supersaw** for the Noise Engineering Legio module (Daisy Patch SM, STM32H750): 5 detuned saws (or sine↔saw morph / hard-sync / +sub-octave depending on left-switch mode) summed to a stereo VCA. This repo ships **two front-ends around one shared DSP core**:
 
-Spec: `../docs/superpowers/specs/2026-05-09-sawstack-supersaw-design.md`
-Plan: `../docs/superpowers/plans/2026-05-10-sawstack-supersaw-firmware.md`
+- `firmware/` — the Legio Eurorack module firmware.
+- `plugin/` — a macOS **AU / VST3 / Standalone** instrument (JUCE) that reuses the firmware DSP.
 
 ## Repo layout
 
-This repo now holds two front-ends around one shared DSP core:
+```
+firmware/
+  src/      DSP core + main.cpp (HAL) + leds
+  test/     host DSP unit tests (plain g++)
+  lib/      libDaisy, DaisySP submodules
+  Makefile
+plugin/
+  src/      PluginProcessor/Editor + note_stack (mono voice logic)
+  test/     host tests for note_stack (reuses firmware/test/test_assert.h)
+  JUCE/     submodule (8.x)
+  CMakeLists.txt
+docs/superpowers/   plugin spec + plan (firmware design docs live in ../docs/)
+```
 
-- `firmware/` — the Legio module firmware (Daisy Patch SM). Build/flash/test as before, but paths are now under `firmware/` (e.g. `make -C firmware/test`, `make -C firmware program-dfu`).
-- `plugin/` — a macOS AU/VST3/Standalone instrument (JUCE) reusing `firmware/src` DSP. See `plugin/README.md`.
+The DSP core (`voice`, `pitch`, `stereo_vca`, `supersaw_engine`, `soft_clip`) lives in `firmware/src` and is consumed **unmodified** by both front-ends. The single plugin-facing concession is `Params.external_hz` (> 0 ⇒ absolute master pitch in Hz; firmware leaves it 0 and is unaffected). When editing the DSP core, remember the plugin shares it.
 
-The DSP core (`voice`, `pitch`, `stereo_vca`, `supersaw_engine`, `soft_clip`)
-lives in `firmware/src` and is consumed unmodified by both, except for
-`Params.external_hz` which lets the plugin set absolute MIDI pitch (firmware
-leaves it 0 and is unaffected).
+**Design docs:** firmware — `../docs/superpowers/specs/2026-05-09-sawstack-supersaw-design.md` / `../docs/superpowers/plans/2026-05-10-sawstack-supersaw-firmware.md`. Plugin — `docs/superpowers/specs/2026-06-20-sawstack-au-vst3-plugin-design.md` / `docs/superpowers/plans/2026-06-20-sawstack-au-vst3-plugin.md` (these live inside this repo so it stays self-contained).
 
-## Build / test / flash
+## Firmware: build / test / flash
 
 ```sh
 make -C firmware/lib/libDaisy   # one-time after submodule init
@@ -27,26 +35,44 @@ make -C firmware/test           # host DSP tests (no hardware)
 make -C firmware program-dfu    # flash (BOOT + RESET on the Patch SM submodule first)
 ```
 
-DFU entry on Legio: BOOT + RESET on the Patch SM submodule (back of the module). Be patient at flash gates — the user may not be able to hit the buttons cleanly without disturbing patch cables. After `make -C firmware program-dfu`, dfu-util's `Error during download get_status` / `Error 74` is harmless. The module sometimes won't re-enumerate without a manual reseat.
+DFU entry, `Error 74`, and `screen` port contention: see `../CLAUDE.md`.
 
-Live serial: `screen /dev/cu.usbmodem* 115200`. If `screen` is already attached on another terminal it holds the device exclusively and `cat` will fail — check `screen -ls`.
+## Plugin: build / test / validate
 
-## Hardware quirks (carried from legio_tape)
+```sh
+brew install cmake ninja                                   # one-time
+git submodule update --init plugin/JUCE                    # one-time (large clone)
+cmake -B plugin/build -G Ninja -DCMAKE_BUILD_TYPE=Release plugin
+cmake --build plugin/build                                 # AU/VST3 auto-install to ~/Library/Audio/Plug-Ins/
+make -C plugin/test                                        # host tests for note_stack
+auval -v aumu Saws Tash                                    # validate the AU; also lists current params
+```
 
-1. **3 ADC channels, not 4.** `CONTROL_KNOB_TOP` and `CONTROL_KNOB_BOTTOM` each read the analog sum of their knob and the CV jack above them. They cannot be separated. `CONTROL_PITCH` is the v/oct jack on its own ADC.
-2. **Switch3 polarity is inverted on Legio.** `Switch3.Read()` returns 0/1/2 = CENTER/POS_UP/POS_DOWN, but on Legio's panel POS_UP corresponds to **panel DOWN** and POS_DOWN to **panel UP**. The `Params` struct uses *panel-relative* labels; the conversion happens once in `main.cpp`.
-3. **newlib-nano strips float printf.** `-u _printf_float` is in `LDFLAGS` (~10 KB flash cost). If you remove it, float telemetry goes silent.
-4. **DFU re-enumeration sometimes needs a manual reseat.** dfu-util's `Error 74` is harmless.
-5. **Floating v/oct jack reads as a non-zero indeterminate ADC value.** `kVoctScale = 0` until calibration is complete makes the v/oct path a no-op; firmware is musically usable from first flash.
-6. **Audio callback is ~1 ms (48 samples @ 48 kHz).** Never call `PrintLine` from inside it. Telemetry goes through a volatile snapshot drained by the slow loop.
+Standalone app: `plugin/build/Sawstack_artefacts/Release/Standalone/Sawstack.app` (fastest by-ear check, no DAW needed).
 
-## DSP / HAL split
+Plugin behavior: **monophonic, last-note priority**; pitch from MIDI + pitch-bend (fixed ±2 st); `juce::ADSR` amp envelope; phase retrigger on each new note (the firmware "gate"). Host params (8): Detune, Morph, Mode (Stack/Rich/Sub), Width (Mono/Stereo/Wide), Attack, Decay, Sustain, Release. No coarse/fine tune (transpose in host) and no output level (use the track fader). Params are read **once per block** → block-rate modulation, which is fine for DAW LFOs/automation.
 
-DSP modules (`voice`, `pitch`, `stereo_vca`, `supersaw_engine`, `leds`) **never** include `daisy_legio.h`, `daisy_seed.h`, or anything from libDaisy outside `DaisySP/Source/...`. They take and return `float` and read a plain `Params` struct. This is what makes `make -C firmware/test` work with plain `g++` and what catches algorithm bugs in seconds rather than in a flash cycle.
+Plugin gotchas:
+- Only `voice/pitch/stereo_vca/supersaw_engine.cpp` are compiled into the plugin (not `leds.cpp` or `main.cpp`). The DSP needs **no DaisySP include path** — it includes only `<cmath>`, the other DSP headers, and `params.h`.
+- `auval` is the strongest automated gate (loads, renders, MIDI, parameter list) — run it after any param change to confirm what shipped.
+- **Ableton caches a device instance's parameter strip from the saved set.** After changing the param list, the plugin's own window updates but Ableton's device strip does not — delete the instance and drag in a fresh one (and rescan plugins if needed).
+- UI is JUCE's **generic editor** (sliders). A custom knob panel is deferred; note that Ableton's device strip is host-drawn and can never be made knobs regardless of plugin UI.
 
-`main.cpp` is the only file that touches the HAL. It reads controls into a `Params` struct, calls `engine.apply_params(p)`, and runs `engine.process_block(out_l, out_r, n)` from the audio callback.
+## Shared DSP / HAL split
 
-## V/oct calibration
+DSP modules (`voice`, `pitch`, `stereo_vca`, `supersaw_engine`) **never** include `daisy_legio.h`, `daisy_seed.h`, or anything from libDaisy outside `DaisySP/Source/...`. They take/return `float` and read a plain `Params` struct. This is what makes `make -C firmware/test` work with plain `g++`, what catches algorithm bugs in seconds rather than a flash cycle, and what made the macOS plugin nearly free to build.
+
+The engine API is `Init(float sample_rate)`, `ApplyParams(const Params&)`, `ProcessBlock(float* l, float* r, int n)` (PascalCase). `firmware/src/main.cpp` is the only file that touches the HAL — it reads controls into a `Params` struct, calls `engine.ApplyParams(p)`, and runs `engine.ProcessBlock(out_l, out_r, n)` from the audio callback. The plugin's `PluginProcessor` plays the same role for MIDI/JUCE.
+
+## Hardware quirks (firmware)
+
+The shared Legio lessons (3 ADC channels, inverted Switch3 polarity, `-u _printf_float`, DFU
+re-enumeration, no `PrintLine` in the audio callback) are in `../CLAUDE.md`. Specific to this app:
+
+- `Params` uses *panel-relative* switch labels; the Switch3 inversion happens once in `main.cpp`.
+- `kVoctScale = 0` until calibration is complete makes the v/oct path a no-op, so the firmware is musically usable from first flash.
+
+## V/oct calibration (firmware)
 
 Hardcoded `kVoctZero` / `kVoctScale` in `firmware/src/pitch.h`. Procedure:
 
@@ -55,15 +81,15 @@ Hardcoded `kVoctZero` / `kVoctScale` in `firmware/src/pitch.h`. Procedure:
 3. Patch a known +1 V source. Note the printed `voct_raw_at_1V`. Compute `kVoctScale = 1.0 / (voct_raw_at_1V - kVoctZero)`.
 4. Edit `firmware/src/pitch.h`, rebuild, reflash.
 
-`kVoctScale = 0` disables the v/oct path entirely (jack ignored). Default state at first flash.
+`kVoctScale = 0` disables the v/oct path entirely (jack ignored). The plugin sets `voct_adc = kVoctZero` so the v/oct path is inert there.
+
+## Coarse pitch range (firmware)
+
+Encoder press+turn gives ±48 semitones (8 octaves total) of coarse pitch range, centered on C4. The right LED flashes bright white briefly each time you cross an octave boundary so you can navigate by feel. (The plugin ignores the encoder path and drives pitch from MIDI via `Params.external_hz`.)
 
 ## Things to avoid
 
 - Don't add a second board class or rewrite the HAL. `DaisyLegio` is complete.
-- Don't add new test frameworks; `firmware/test/test_assert.h` is intentionally minimal.
-- Don't claim work is done because host tests pass — the in-rack feel test is the real gate.
-- Don't call `PrintLine` from inside the audio callback.
-
-## Coarse pitch range
-
-Encoder press+turn gives ±48 semitones (8 octaves total) of coarse pitch range, centered on C4. The right LED flashes bright white briefly each time you cross an octave boundary so you can navigate by feel.
+- Don't change the shared DSP in `firmware/src` without remembering the plugin compiles the same files — keep it HAL-free; `Params.external_hz` is the only plugin concession.
+- Don't add new test frameworks; `firmware/test/test_assert.h` is intentionally minimal (the plugin tests reuse it).
+- Don't claim firmware work is done because host tests pass — the in-rack feel test is the real gate. For the plugin, `auval` passing is not the same as the by-ear/in-DAW play test.
