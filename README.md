@@ -1,6 +1,12 @@
-# sawstack
+# legio-sawstack
 
-5-voice supersaw oscillator firmware for the Noise Engineering Legio module.
+5-voice supersaw oscillator firmware for the Noise Engineering Legio Eurorack module, plus a macOS AU/VST3 plugin built from the same DSP core.
+
+Part of a family of alternative firmwares for the [Noise Engineering Legio](https://noiseengineering.us/) platform (Daisy Patch SM, STM32H750):
+[legio-sawstack](https://github.com/tashian/legio-sawstack) (supersaw oscillator) ·
+[legio-stutterer](https://github.com/tashian/legio-stutterer) (stutter → tape delay → DJ filter) ·
+[legio-drifter](https://github.com/tashian/legio-drifter) (random Bézier panner / crossfader / CV).
+Flash any of them onto a Legio via DFU; the stock firmware can be restored from Noise Engineering's customer portal.
 
 - **Top knob + CV** — Detune (0 = unison → ±2 octaves spread)
 - **Bottom knob + CV** — Morph (sine↔saw / hard-sync richness / sub-octave mix, per mode)
