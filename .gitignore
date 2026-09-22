@@ -25,3 +25,6 @@ compile_commands.json
 
 # Plugin (CMake / JUCE) build trees are covered by build/ above.
 # Host-installed AU/VST3 bundles live in ~/Library/Audio/Plug-Ins, not here.
+
+# Per-module v/oct calibration (copy calibration_local.h.example)
+calibration_local.h

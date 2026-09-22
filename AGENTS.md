@@ -98,12 +98,12 @@ holds the device exclusively and `cat`/other readers fail — check `screen -ls`
 
 ## V/oct calibration (firmware)
 
-Hardcoded `kVoctZero` / `kVoctScale` in `firmware/src/pitch.h`. The committed values were measured on the author's module and will be slightly off on any other unit (typically a few cents to a semitone). Procedure (also in README):
+Defaults for `kVoctZero` / `kVoctScale` live in `firmware/src/pitch.h`; a gitignored `firmware/src/calibration_local.h` (copy the `.example`) overrides them via `__has_include`. The committed defaults were measured on the author's module and will be slightly off on any other unit (typically a few cents to a semitone). Procedure (also in README):
 
 1. Open serial telemetry: `screen /dev/cu.usbmodem* 115200`. Telemetry always prints `voct_raw=<f>`.
 2. Patch a known 0 V source to the v/oct jack. Note the printed `voct_raw` → that's `kVoctZero`.
 3. Patch a known +1 V source. Note the printed `voct_raw_at_1V`. Compute `kVoctScale = 1.0 / (voct_raw_at_1V - kVoctZero)`.
-4. Edit `firmware/src/pitch.h`, rebuild, reflash.
+4. Put both values in `firmware/src/calibration_local.h` (or edit the defaults in `pitch.h`), rebuild, reflash.
 
 `kVoctScale = 0` disables the v/oct path entirely (jack ignored). The plugin sets `voct_adc = kVoctZero` so the v/oct path is inert there.
 

@@ -29,7 +29,9 @@ they will likely be off by a few cents to a semitone. To calibrate:
 4. `kVoctScale = 1.0 / (raw_1v - kVoctZero)`. Optionally check a third point (e.g. −2 V or +3 V)
    lands within ~1 LSB of `kVoctZero + volts / kVoctScale`; the ADC is linear enough that two points
    suffice.
-5. Edit the two constants in `firmware/src/pitch.h`, rebuild, reflash.
+5. `cp firmware/src/calibration_local.h.example firmware/src/calibration_local.h`, put your two
+   values in it, rebuild, reflash. `calibration_local.h` is gitignored, so your values survive
+   `git pull` and never end up in a commit. (Editing the defaults in `pitch.h` also works.)
 
 Setting `kVoctScale = 0` disables the v/oct path entirely (the jack is ignored), which is a safe
 state while you calibrate. The plugin build is unaffected — it drives pitch from MIDI.
@@ -44,3 +46,13 @@ A macOS AU / VST3 / Standalone instrument built with JUCE, reusing the firmware 
     cmake --build plugin/build
 
 Artefacts land in `plugin/build/Sawstack_artefacts/Release/` and AU/VST3 are auto-installed to `~/Library/Audio/Plug-Ins/`. Validate with `auval -v aumu Saws Tash`.
+
+## License
+
+The source in this repository is MIT — see [`LICENSE`](LICENSE). libDaisy and DaisySP (submodules)
+are MIT-licensed by Electrosmith.
+
+The **plugin** links against [JUCE](https://juce.com), which is dual-licensed AGPLv3 / commercial.
+Unless you hold a commercial JUCE license, any AU/VST3/Standalone binary you build from `plugin/`
+is governed by the AGPLv3 in addition to this repository's MIT terms. The firmware does not use
+JUCE and is unaffected.

@@ -1,0 +1,10 @@
+// Per-module v/oct calibration override for sawstack.
+//
+// Copy this file to calibration_local.h (same directory; it is gitignored),
+// fill in the values you measured on YOUR module, rebuild, reflash.
+// Procedure: README.md → "Calibrating v/oct for your module".
+//
+// Both the firmware and the plugin build pick this file up automatically.
+
+constexpr float kVoctZero  = 0.3019f;   // raw ADC reading (0..1) with 0 V patched into the pitch jack
+constexpr float kVoctScale = 7.6805f;   // 1.0 / (raw_at_1V - kVoctZero); 0 disables the v/oct path

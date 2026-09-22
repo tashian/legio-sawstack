@@ -3,10 +3,17 @@
 
 namespace sawstack {
 
-// V/oct calibration. Measure once on real hardware, edit, rebuild, reflash.
-// kVoctScale = 0 disables the v/oct path entirely (jack ignored).
-constexpr float kVoctZero  = 0.3019f;   // ADC reading at 0V (measured 2026-05-10 on the author's Patch SM — see README "Calibrating v/oct")
-constexpr float kVoctScale = 7.6805f;   // 1.0 / (0.4321 - 0.3019); verified linear at -2V (0.0412 measured vs 0.0415 predicted, ~1 LSB)
+// V/oct calibration — per-module. The Patch SM's ADC offset/gain vary slightly
+// between units, so the defaults below (measured on the author's module) will be
+// a little off on yours. To use your own values without touching tracked files,
+// copy calibration_local.h.example to calibration_local.h (gitignored) and edit
+// it; see README "Calibrating v/oct". kVoctScale = 0 disables the v/oct path.
+#if __has_include("calibration_local.h")
+#include "calibration_local.h"
+#else
+constexpr float kVoctZero  = 0.3019f;   // ADC reading at 0 V
+constexpr float kVoctScale = 7.6805f;   // 1.0 / (0.4321 - 0.3019); linear to ~1 LSB at -2 V
+#endif
 
 // Convert raw v/oct ADC reading to volts using calibration constants.
 // Returns 0.0 if scale == 0.0 (calibration not done).
